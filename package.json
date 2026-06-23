@@ -1,0 +1,21 @@
+{
+  "name": "philosopher-investor",
+  "version": "1.0.0",
+  "description": "Investment analysis through legendary investor lenses",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "next": "^14.0.0",
+    "@anthropic-ai/sdk": "^0.9.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "eslint-config-next": "^14.0.0"
+  }
+}
