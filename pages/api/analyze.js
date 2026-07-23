@@ -166,7 +166,7 @@ export default async function handler(req, res) {
   // Base task, plus current market data when the research step succeeded.
   // All philosophers receive the SAME fact sheet, so their disagreements
   // reflect philosophy, not inconsistent data.
-  let userContent = `Please analyse ${ticker.toUpperCase()}${companyName ? ` (${companyName})` : ''} through your investment lens. Be specific about this company's actual characteristics — financials, business model, competitive position. Structure your response clearly with the six assessment areas, then your verdict.`;
+  let userContent = `Please analyse ${ticker.toUpperCase()}${companyName ? ` (${companyName})` : ''} through your investment lens. Be specific about this company's actual characteristics — financials, business model, competitive position. Structure your response clearly with the six assessment areas, then your verdict. Keep the full response under roughly 800 words — always finish with the verdict line.`;
 
   if (research) {
     userContent += `
@@ -186,7 +186,7 @@ Note: live market data was unavailable for this analysis. Use your best knowledg
   try {
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1500,
+      max_tokens: 3000,
       system: philosopher.prompt,
       messages: [
         {
