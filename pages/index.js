@@ -87,6 +87,9 @@ export default function InvestmentPhilosopher() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(null);
   const [hasRun, setHasRun] = useState(false);
+  const [researching, setResearching] = useState(false);
+  const [researchData, setResearchData] = useState(null);
+  const [researchFailed, setResearchFailed] = useState(false);
 
   const togglePhilosopher = (id) => {
     setSelectedPhilosophers(prev =>
@@ -99,11 +102,35 @@ export default function InvestmentPhilosopher() {
     setResults({});
     setError(null);
     setHasRun(true);
+    setResearchData(null);
+    setResearchFailed(false);
 
     const selected = PHILOSOPHERS.filter(p => selectedPhilosophers.includes(p.id));
     const firstId = selected[0]?.id;
     setActiveTab(firstId);
 
+    // STAGE 1: one shared research call gathers current market data.
+    // Every philosopher then reasons from the same fact sheet.
+    setResearching(true);
+    let research = null;
+    try {
+      const r = await fetch("/api/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticker: ticker.toUpperCase(), companyName })
+      });
+      if (r.ok) {
+        const d = await r.json();
+        research = d.research || null;
+      }
+    } catch (e) {
+      // fall through — analyses still run, just without live data
+    }
+    setResearching(false);
+    setResearchData(research);
+    if (!research) setResearchFailed(true);
+
+    // STAGE 2: the philosopher analyses, in parallel, sharing the fact sheet.
     const loadingState = {};
     selected.forEach(p => loadingState[p.id] = true);
     setLoading(loadingState);
@@ -116,7 +143,8 @@ export default function InvestmentPhilosopher() {
           body: JSON.stringify({
             ticker: ticker.toUpperCase(),
             companyName,
-            philosopherId: philosopher.id
+            philosopherId: philosopher.id,
+            research
           })
         });
 
@@ -336,7 +364,7 @@ export default function InvestmentPhilosopher() {
 
           <button
             onClick={analyseStock}
-            disabled={!ticker.trim() || selectedPhilosophers.length === 0}
+            disabled={!ticker.trim() || selectedPhilosophers.length === 0 || researching}
             style={{
               background: ticker.trim() && selectedPhilosophers.length > 0 ? "#c8a84b" : "#2a2a2a",
               color: ticker.trim() && selectedPhilosophers.length > 0 ? "#0d0d0d" : "#444",
@@ -357,6 +385,68 @@ export default function InvestmentPhilosopher() {
 
         {hasRun && selectedList.length > 0 && (
           <div>
+            {researching && (
+              <div className="no-print" style={{
+                background: "#161616",
+                border: "1px solid #2a2a2a",
+                borderRadius: 8,
+                padding: "14px 18px",
+                marginBottom: 24,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                color: "#c8a84b",
+                fontSize: 13
+              }}>
+                <span style={{ fontSize: 18 }}>⟳</span>
+                Gathering current market data for {ticker.toUpperCase()}…
+              </div>
+            )}
+
+            {researchData && (
+              <details className="no-print" style={{
+                background: "#161616",
+                border: "1px solid #2a2a2a",
+                borderRadius: 8,
+                padding: "12px 18px",
+                marginBottom: 24
+              }}>
+                <summary style={{
+                  cursor: "pointer",
+                  color: "#c8a84b",
+                  fontSize: 12,
+                  letterSpacing: 1,
+                  textTransform: "uppercase"
+                }}>
+                  ▸ Market data used in this analysis (live, gathered just now)
+                </summary>
+                <div style={{
+                  marginTop: 12,
+                  fontSize: 13,
+                  color: "#c8c0b0",
+                  lineHeight: 1.6,
+                  whiteSpace: "pre-wrap"
+                }}>
+                  {researchData}
+                </div>
+              </details>
+            )}
+
+            {researchFailed && !researching && (
+              <div className="no-print" style={{
+                background: "#161616",
+                border: "1px solid #4a3a1a",
+                borderRadius: 8,
+                padding: "12px 18px",
+                marginBottom: 24,
+                color: "#a89060",
+                fontSize: 12,
+                lineHeight: 1.6
+              }}>
+                ⚠ Live market data was unavailable — these analyses rely on the model's
+                built-in knowledge, so figures may be out of date.
+              </div>
+            )}
             {selectedList.some(p => results[p.id]) && (
               <div className="no-print" style={{
                 display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24, alignItems: "center"
@@ -536,6 +626,18 @@ export default function InvestmentPhilosopher() {
                     })}
                   </tbody>
                 </table>
+
+                {/* Market data basis */}
+                {researchData && (
+                  <div style={{ marginBottom: 24, breakInside: "avoid", pageBreakInside: "avoid" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, borderBottom: "1px solid #111", paddingBottom: 4, marginBottom: 8, color: "#111" }}>
+                      Market data used (gathered via live web search)
+                    </div>
+                    <div style={{ fontSize: 11, color: "#333", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+                      {researchData}
+                    </div>
+                  </div>
+                )}
 
                 {/* Full detail for each investor */}
                 {completedList.map(p => {
