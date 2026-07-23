@@ -47,6 +47,15 @@ const PHILOSOPHERS = [
     tagline: "Wonderful company, fair price, forever hold",
   },
   {
+    id: "stephena",
+    name: "Stephen A",
+    fund: "Global Income",
+    avatar: "SA",
+    color: "#4a1a2e",
+    accent: "#d98aa8",
+    tagline: "Underappreciated growth, all-weather, quietly different",
+  },
+  {
     id: "wood",
     name: "Cathie Wood",
     fund: "ARK Invest",
