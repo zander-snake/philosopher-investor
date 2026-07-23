@@ -155,7 +155,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { ticker, companyName, philosopherId } = req.body;
+  const { ticker, companyName, philosopherId, research } = req.body;
 
   if (!ticker || !philosopherId || !PHILOSOPHERS[philosopherId]) {
     return res.status(400).json({ error: 'Missing or invalid parameters' });
@@ -163,15 +163,35 @@ export default async function handler(req, res) {
 
   const philosopher = PHILOSOPHERS[philosopherId];
 
+  // Base task, plus current market data when the research step succeeded.
+  // All philosophers receive the SAME fact sheet, so their disagreements
+  // reflect philosophy, not inconsistent data.
+  let userContent = `Please analyse ${ticker.toUpperCase()}${companyName ? ` (${companyName})` : ''} through your investment lens. Be specific about this company's actual characteristics — financials, business model, competitive position. Structure your response clearly with the six assessment areas, then your verdict.`;
+
+  if (research) {
+    userContent += `
+
+Current market data, gathered today via live web search:
+<current_market_data>
+${research}
+</current_market_data>
+
+Use these figures as your primary financial data — they are more recent than your training knowledge. Where the fact sheet says "not found", you may fall back on your general knowledge, but flag that you are doing so.`;
+  } else {
+    userContent += `
+
+Note: live market data was unavailable for this analysis. Use your best knowledge and clearly flag that figures may be out of date.`;
+  }
+
   try {
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1000,
+      max_tokens: 1500,
       system: philosopher.prompt,
       messages: [
         {
           role: 'user',
-          content: `Please analyse ${ticker.toUpperCase()}${companyName ? ` (${companyName})` : ''} through your investment lens. Be specific about this company's actual characteristics — financials, business model, competitive position. If you don't have precise current data, use your best knowledge and flag where assumptions are made. Structure your response clearly with the six assessment areas, then your verdict.`
+          content: userContent
         }
       ]
     });
