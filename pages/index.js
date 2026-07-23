@@ -259,7 +259,7 @@ export default function InvestmentPhilosopher() {
           The Philosopher's Table
         </h1>
         <p className="no-print" style={{ color: "#888", fontSize: 15, margin: "0 0 40px", fontStyle: "italic" }}>
-          One stock, six legendary lenses
+          One stock, seven investor lenses
         </p>
 
         <div className="no-print" style={{
